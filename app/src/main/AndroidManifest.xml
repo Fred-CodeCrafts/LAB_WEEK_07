@@ -17,9 +17,8 @@
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyC34fBTIdQH3Ns4D5K-KvMIkQUr3NY219Y"/>
+            android:value="AIzaSyBiewu_0lnrnJJDrSsa251xkY8MTWIWEBQ"/>
 
-        <!-- MapsActivity is now the launcher -->
         <activity
             android:name=".MapsActivity"
             android:exported="true"
@@ -30,7 +29,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Secondary activity -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />

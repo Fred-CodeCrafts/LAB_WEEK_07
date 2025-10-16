@@ -1,85 +1,72 @@
 package com.fredcodecrafts.lab_week_07
 
-import androidx.appcompat.app.AppCompatActivity
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
-
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-
-import android.content.pm.PackageManager
-import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
-
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private lateinit var mMap: GoogleMap
+    private lateinit var map: GoogleMap
 
-    // ActivityResultLauncher for permission requests
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+    // Location permission launcher
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            enableMyLocation()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
-        // Initialize map fragment
+        // Initialize the map fragment
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
-        // Register ActivityResultLauncher to handle permission requests
-        requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                if (isGranted) {
-                    // Permission granted
-                    getLastLocation()
-                } else {
-                    // Permission denied -> show rationale
-                    showPermissionRationale {
-                        requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                    }
-                }
-            }
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
+        map = googleMap
 
+        // Example marker: Jakarta
+        val jakarta = LatLng(-6.2088, 106.8456)
+        map.addMarker(MarkerOptions().position(jakarta).title("Marker in Jakarta"))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(jakarta, 12f))
+
+        checkLocationPermission()
+    }
+
+    private fun checkLocationPermission() {
         when {
-            hasLocationPermission() -> getLastLocation()
-            shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                showPermissionRationale {
-                    requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                }
+            ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                enableMyLocation()
             }
-            else -> requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
         }
     }
 
-    // Check if location permission is granted
-    private fun hasLocationPermission() =
-        ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-    // Show rationale dialog if permission was denied
-    private fun showPermissionRationale(positiveAction: () -> Unit) {
-        AlertDialog.Builder(this)
-            .setTitle("Location permission")
-            .setMessage("This app will not work without knowing your current location")
-            .setPositiveButton(android.R.string.ok) { _, _ -> positiveAction() }
-            .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
-            .create()
-            .show()
-    }
-
-    // Placeholder for action after permission is granted
-    private fun getLastLocation() {
-        Log.d("MapsActivity", "getLastLocation() called.")
+    private fun enableMyLocation() {
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            map.isMyLocationEnabled = true
+        }
     }
 }
